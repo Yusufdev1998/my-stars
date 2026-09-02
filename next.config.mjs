@@ -1,6 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  // PWA configuration
+  experimental: {
+    pwa: {
+      enabled: true,
+      scope: "/",
+      sw: "/sw.js",
+    },
+  },
 };
 
 export default nextConfig;
