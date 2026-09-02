@@ -33,6 +33,7 @@ export default function StarBoard({ classId, className, onSwitchClass }) {
   const [showMonthly, setShowMonthly] = useState(false);
   const [newStudent, setNewStudent] = useState("");
   const [celebrate, setCelebrate] = useState(null);
+  const [finishResult, setFinishResult] = useState(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -96,6 +97,19 @@ export default function StarBoard({ classId, className, onSwitchClass }) {
   );
   const top = ranked.filter((r) => r.count > 0).slice(0, 6);
 
+  const confettiPieces = useMemo(() => {
+    if (!finishResult) return [];
+    const emojis = ["🎉", "⭐", "✨", "🎊", "🏆"];
+    return Array.from({ length: 40 }).map((_, i) => ({
+      id: i,
+      left: (i * 47) % 100,
+      delay: (i % 20) * 0.15,
+      duration: 2.5 + ((i * 13) % 20) / 10,
+      emoji: emojis[i % emojis.length],
+      size: 14 + (i % 4) * 4,
+    }));
+  }, [finishResult]);
+
   const finishLesson = async () => {
     try {
       const res = await api.finishLesson(classId);
@@ -105,6 +119,7 @@ export default function StarBoard({ classId, className, onSwitchClass }) {
       setOpenStudent(null);
       if (res.entry) {
         setHistory((h) => [res.entry, ...h].slice(0, 60));
+        setFinishResult(res.entry);
       }
     } catch (e) {
       setError(e.message);
@@ -539,6 +554,87 @@ export default function StarBoard({ classId, className, onSwitchClass }) {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lesson finished celebration modal — stays open until the teacher closes it */}
+      {finishResult && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-hidden"
+          style={{ background: "rgba(6,7,26,0.88)" }}
+        >
+          <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            {confettiPieces.map((c) => (
+              <span
+                key={c.id}
+                className="confetti-piece"
+                style={{
+                  left: `${c.left}%`,
+                  fontSize: c.size,
+                  animationDuration: `${c.duration}s`,
+                  animationDelay: `${c.delay}s`,
+                }}
+              >
+                {c.emoji}
+              </span>
+            ))}
+          </div>
+
+          <div
+            className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl p-6 text-center bounceIn"
+            style={{ background: "#12153f", border: "2px solid #FFD873", boxShadow: "0 0 60px rgba(255,216,115,0.35)" }}
+          >
+            <button
+              onClick={() => setFinishResult(null)}
+              className="absolute top-3 right-3 p-1 rounded-full"
+              style={{ color: "#8A85C4" }}
+            >
+              <X size={22} />
+            </button>
+
+            <div className="flex justify-center mb-2">
+              <Trophy size={56} color="#FFD873" fill="#FFD873" style={{ filter: "drop-shadow(0 0 16px #FFD87399)" }} />
+            </div>
+            <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Baloo 2', sans-serif", color: "#FFD873" }}>
+              🎉 Dars yakunlandi!
+            </h2>
+            <p className="text-sm mb-5" style={{ color: "#B8A9E8" }}>
+              {finishResult.topic}
+            </p>
+
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: "#8A85C4" }}>
+              Eng zo&apos;r o&apos;quvchilar
+            </p>
+            <div className="flex flex-col gap-2 mb-2">
+              {finishResult.top.map((t, i) => (
+                <div
+                  key={t.name}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 riseIn"
+                  style={{
+                    background: i === 0 ? "linear-gradient(90deg, #3a3210, #1b2050)" : "#1b2050",
+                    border: `1px solid ${i === 0 ? "#FFD873" : "#2a2f6b"}`,
+                    animationDelay: `${i * 0.12}s`,
+                  }}
+                >
+                  <span className="text-2xl">{["🥇", "🥈", "🥉"][i]}</span>
+                  <span className="flex-1 text-left text-base font-semibold" style={{ fontFamily: "'Baloo 2', sans-serif" }}>
+                    {t.name}
+                  </span>
+                  <span className="flex items-center gap-1 text-sm font-bold" style={{ color: "#FFD873" }}>
+                    <Star size={14} fill="#FFD873" color="#FFD873" /> {t.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setFinishResult(null)}
+              className="mt-4 w-full rounded-2xl py-3 font-bold"
+              style={{ background: "#FFD873", color: "#12153f", fontFamily: "'Baloo 2', sans-serif" }}
+            >
+              Yopish
+            </button>
           </div>
         </div>
       )}
